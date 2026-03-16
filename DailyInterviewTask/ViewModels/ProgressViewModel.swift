@@ -1,11 +1,31 @@
 import Foundation
 import Combine
 
+enum ProgressScope: String, CaseIterable, Identifiable {
+    case total
+    case completed
+    case bookmarked
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .total:
+            return "Total"
+        case .completed:
+            return "Completed"
+        case .bookmarked:
+            return "Bookmarked"
+        }
+    }
+}
+
 @MainActor
 final class ProgressViewModel: ObservableObject {
     @Published private(set) var questions: [Question] = []
     @Published private(set) var completedIDs: Set<String> = []
     @Published private(set) var bookmarkedIDs: Set<String> = []
+    @Published var selectedScope: ProgressScope = .completed
 
     private let repository: QuestionRepository
     private let progressStorage: ProgressStorageServicing
@@ -33,8 +53,15 @@ final class ProgressViewModel: ObservableObject {
         return Int((Double(completedCount) / Double(totalProblems) * 100).rounded())
     }
 
-    var completedQuestions: [Question] {
-        questions.filter { completedIDs.contains($0.id) }
+    var displayedQuestions: [Question] {
+        switch selectedScope {
+        case .total:
+            return questions
+        case .completed:
+            return questions.filter { completedIDs.contains($0.id) }
+        case .bookmarked:
+            return questions.filter { bookmarkedIDs.contains($0.id) }
+        }
     }
 
     func refresh() {

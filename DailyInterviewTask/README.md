@@ -2,55 +2,59 @@
 
 ## Project Overview
 
-DailyInterviewTask is a local-only SwiftUI iPhone app for learning common algorithm interview problems. Users can browse curated problems, read explanations and recommended solutions, bookmark useful questions, mark completed work, and track progress over time.
+DailyInterviewTask is a local-only SwiftUI iPhone study app focused on the full Blind 75 problem set. Users can review a daily recommendation, jump to a random next problem, browse the full catalog, switch between English and Chinese content on learning pages, compare optimal and alternative solutions, bookmark problems, mark them completed, and track progress by topic.
 
 ## Tech Stack
 
 - Swift
 - SwiftUI
-- MVVM-style presentation layer
-- Local JSON data loading with `Bundle.main`
-- `UserDefaults` persistence for bookmarks and completion
-- XCTest for basic unit coverage
+- MVVM-style screen state
+- Local JSON loading with `Bundle.main`
+- `UserDefaults` persistence for bookmarks, completion, and language preference
+- XCTest unit coverage
 
 ## How to Run
 
 1. Open `DailyInterviewTask.xcodeproj` in Xcode.
 2. Select the `DailyInterviewTask` scheme.
-3. Run on an iPhone simulator.
+3. Run the app on an iPhone simulator or device.
 
 ## Project Structure
 
-- `DailyInterviewTask/Models`: Codable app models
-- `DailyInterviewTask/Repositories`: JSON loading repository
-- `DailyInterviewTask/Services`: UserDefaults-backed progress storage
-- `DailyInterviewTask/ViewModels`: Home, detail, and progress view models
-- `DailyInterviewTask/Views`: Main screens and app shell
-- `DailyInterviewTask/Components`: Reusable UI components
-- `DailyInterviewTask/Resources`: Local JSON problem database
-- `DailyInterviewTaskTests`: Unit tests
+- `DailyInterviewTask/Models`: bilingual models, solutions, and topic progress types
+- `DailyInterviewTask/Repositories`: local JSON repository
+- `DailyInterviewTask/Services`: `UserDefaults` persistence and app settings
+- `DailyInterviewTask/ViewModels`: Home, All Problems, Detail, and Progress state
+- `DailyInterviewTask/Views`: tab shell and screen implementations
+- `DailyInterviewTask/Components`: reusable cards, rows, code blocks, language toggle, and progress bars
+- `DailyInterviewTask/Resources`: Blind 75 JSON dataset
+- `DailyInterviewTaskTests`: unit tests
 
 ## JSON File Location
 
-Problem data lives in `DailyInterviewTask/Resources/questions.json`.
+The full problem database lives in `DailyInterviewTask/Resources/questions.json`.
 
-## How to Add New Problems
+## How to Add or Update Problems
 
-1. Open `DailyInterviewTask/Resources/questions.json`.
-2. Add a new JSON object matching the `Question` schema.
-3. Keep the `solution` payload aligned with `QuestionSolution`.
+1. Edit `DailyInterviewTask/Resources/questions.json`.
+2. Follow the `Question` schema, including bilingual text and multiple `solutions`.
+3. Keep one solution marked with `isOptimal = true`.
 4. Rebuild the app.
-
-No Swift code changes are required when only adding or editing problems.
 
 ## Local Persistence
 
-The app stores completed and bookmarked question IDs in `UserDefaults`. That keeps the MVP offline, lightweight, and simple to evolve without introducing Core Data or a backend.
+The app stores:
+
+- completed problem IDs
+- bookmarked problem IDs
+- selected language
+
+All persistence uses `UserDefaults`, keeping the app fully offline and lightweight.
 
 ## Future Improvements
 
-- Add topic and difficulty filters
-- Add spaced-repetition review scheduling
-- Support notes per problem
-- Add search and sorting controls
-- Add richer analytics and streak tracking
+- Topic-specific review queues and spaced repetition
+- Richer search and difficulty filters
+- Personalized study plans
+- Per-problem notes and revision history
+- Stronger automated validation for the JSON content

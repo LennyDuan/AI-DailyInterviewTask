@@ -1,8 +1,11 @@
 import SwiftUI
 
 struct HomeView: View {
+    @EnvironmentObject private var appNavigation: AppNavigation
     @StateObject private var viewModel: HomeViewModel
     private let progressStorage: ProgressStorageServicing
+
+    @State private var navigationPath: [Question] = []
     @State private var showingLoadError = false
 
     init(repository: QuestionRepository, progressStorage: ProgressStorageServicing) {
@@ -16,42 +19,29 @@ struct HomeView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Algo Daily")
-                        .font(.largeTitle.weight(.bold))
-
-                    if let recommendation = viewModel.recommendedQuestion {
-                        recommendationCard(for: recommendation)
-                    }
-
-                    Text("All Problems")
-                        .font(.title3.weight(.semibold))
-
-                    LazyVStack(spacing: 12) {
-                        ForEach(viewModel.questions) { question in
-                            NavigationLink {
-                                QuestionDetailView(
-                                    viewModel: QuestionDetailViewModel(
-                                        question: question,
-                                        progressStorage: progressStorage
-                                    )
-                                )
-                            } label: {
-                                QuestionRowView(
-                                    question: question,
-                                    isCompleted: viewModel.isCompleted(question),
-                                    isBookmarked: viewModel.isBookmarked(question)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
+                    heroSection
+                    progressSection
                 }
                 .padding()
             }
-            .background(Color(.systemGroupedBackground))
+            .background(
+                LinearGradient(
+                    colors: [Color(.systemGroupedBackground), Color.white],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .navigationDestination(for: Question.self) { question in
+                QuestionDetailView(
+                    viewModel: QuestionDetailViewModel(
+                        question: question,
+                        progressStorage: progressStorage
+                    )
+                )
+            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
             .alert("Unable to Load Questions", isPresented: $showingLoadError) {
@@ -66,52 +56,110 @@ struct HomeView: View {
         }
     }
 
-    @ViewBuilder
-    private func recommendationCard(for question: Question) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Daily Recommendation")
-                .font(.headline)
-                .foregroundStyle(.secondary)
+    private var heroSection: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("Algo Daily")
+                .font(.largeTitle.weight(.bold))
 
-            Text(question.title)
-                .font(.title3.weight(.semibold))
-
-            HStack(spacing: 8) {
-                DifficultyBadge(difficulty: question.difficulty)
-                Text(question.topic)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            Text(question.shortSummary)
+            Text("Study one strong problem at a time, then jump to a fresh challenge when you are ready.")
                 .font(.body)
                 .foregroundStyle(.secondary)
 
-            NavigationLink {
-                QuestionDetailView(
-                    viewModel: QuestionDetailViewModel(
-                        question: question,
-                        progressStorage: progressStorage
-                    )
+            if let recommendation = viewModel.displayedRecommendation {
+                SectionCardView(eyebrow: "Daily Recommendation", title: recommendation.title.english) {
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack(spacing: 10) {
+                            DifficultyBadge(difficulty: recommendation.difficulty)
+                            Text(recommendation.topic)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Text(recommendation.shortSummary.english)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+
+                        HStack(spacing: 12) {
+                            Button("View Problem") {
+                                navigationPath.append(recommendation)
+                            }
+                            .buttonStyle(HomeActionButtonStyle(tint: .blue))
+
+                            Button("Random Next") {
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    _ = viewModel.randomNextQuestion()
+                                }
+                            }
+                            .buttonStyle(HomeActionButtonStyle(tint: Color(red: 0.13, green: 0.60, blue: 0.46)))
+                        }
+                    }
+                }
+                .id(recommendation.id)
+                .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                .background(
+                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.blue.opacity(0.10), Color.teal.opacity(0.14)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                 )
-            } label: {
-                Text("View Problem")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(Color.blue)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
         }
-        .padding(20)
-        .background(
-            LinearGradient(
-                colors: [Color.blue.opacity(0.12), Color.teal.opacity(0.18)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+    }
+
+    private var progressSection: some View {
+        SectionCardView(eyebrow: "Completion Progress", title: "Track your Algo Daily momentum") {
+            VStack(alignment: .leading, spacing: 16) {
+                ProgressBarRowView(
+                    title: "Overall Progress",
+                    subtitle: "\(viewModel.completedCount)/\(viewModel.questions.count)",
+                    progress: viewModel.completionPercentage,
+                    tint: .blue,
+                    action: {
+                        appNavigation.showAllProblems()
+                    }
+                )
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("By Topic")
+                        .font(.headline)
+
+                    ForEach(viewModel.topicProgress) { item in
+                        ProgressBarRowView(
+                            title: item.topic,
+                            subtitle: "\(item.completedCount)/\(item.totalCount)",
+                            progress: item.percentage,
+                            tint: tint(for: item.topic),
+                            action: {
+                                appNavigation.showAllProblems(filteredBy: item.topic)
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private func tint(for topic: String) -> Color {
+        let palette: [Color] = [.blue, .green, .orange, .pink, .teal, .indigo]
+        let index = abs(topic.hashValue) % palette.count
+        return palette[index]
+    }
+}
+
+private struct HomeActionButtonStyle: ButtonStyle {
+    let tint: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(tint.opacity(configuration.isPressed ? 0.75 : 1))
+            .foregroundStyle(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }

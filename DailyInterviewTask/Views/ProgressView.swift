@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ProgressView: View {
     @StateObject private var viewModel: ProgressViewModel
+    private let progressStorage: ProgressStorageServicing
 
     init(repository: QuestionRepository, progressStorage: ProgressStorageServicing) {
         _viewModel = StateObject(
@@ -10,6 +11,7 @@ struct ProgressView: View {
                 progressStorage: progressStorage
             )
         )
+        self.progressStorage = progressStorage
     }
 
     var body: some View {
@@ -19,25 +21,39 @@ struct ProgressView: View {
                     Text("Learning Progress")
                         .font(.largeTitle.weight(.bold))
 
+                    Text("Tap a metric to switch the detailed list instantly.")
+                        .foregroundStyle(.secondary)
+
                     HStack(spacing: 12) {
                         StatCardView(
                             title: "Total",
                             value: "\(viewModel.totalProblems)",
-                            tint: .blue
-                        )
+                            tint: .blue,
+                            isSelected: viewModel.selectedScope == .total
+                        ) {
+                            viewModel.selectedScope = .total
+                        }
+
                         StatCardView(
                             title: "Completed",
                             value: "\(viewModel.completedCount)",
-                            tint: .green
-                        )
+                            tint: .green,
+                            isSelected: viewModel.selectedScope == .completed
+                        ) {
+                            viewModel.selectedScope = .completed
+                        }
                     }
 
                     HStack(spacing: 12) {
                         StatCardView(
                             title: "Bookmarked",
                             value: "\(viewModel.bookmarkedCount)",
-                            tint: .orange
-                        )
+                            tint: .orange,
+                            isSelected: viewModel.selectedScope == .bookmarked
+                        ) {
+                            viewModel.selectedScope = .bookmarked
+                        }
+
                         StatCardView(
                             title: "Completion",
                             value: "\(viewModel.completionPercentage)%",
@@ -45,24 +61,32 @@ struct ProgressView: View {
                         )
                     }
 
-                    Text("Completed Problems")
-                        .font(.title3.weight(.semibold))
-
-                    if viewModel.completedQuestions.isEmpty {
-                        Text("Complete a few questions to build momentum.")
-                            .foregroundStyle(.secondary)
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(.secondarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    } else {
-                        LazyVStack(spacing: 12) {
-                            ForEach(viewModel.completedQuestions) { question in
-                                QuestionRowView(
-                                    question: question,
-                                    isCompleted: true,
-                                    isBookmarked: viewModel.bookmarkedIDs.contains(question.id)
-                                )
+                    SectionCardView(
+                        eyebrow: "Detailed List",
+                        title: "\(viewModel.selectedScope.title) Problems"
+                    ) {
+                        if viewModel.displayedQuestions.isEmpty {
+                            Text("No problems match this view yet.")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(viewModel.displayedQuestions) { question in
+                                    NavigationLink {
+                                        QuestionDetailView(
+                                            viewModel: QuestionDetailViewModel(
+                                                question: question,
+                                                progressStorage: progressStorage
+                                            )
+                                        )
+                                    } label: {
+                                        QuestionRowView(
+                                            question: question,
+                                            isCompleted: viewModel.completedIDs.contains(question.id),
+                                            isBookmarked: viewModel.bookmarkedIDs.contains(question.id)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
                         }
                     }
