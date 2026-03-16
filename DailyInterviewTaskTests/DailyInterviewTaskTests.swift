@@ -94,7 +94,12 @@ private enum MockData {
                 english: "Explanation",
                 chinese: "解释"
             ),
-            constraints: ["Constraint"],
+            constraints: [
+                LocalizedText(
+                    english: "Constraint",
+                    chinese: "限制"
+                )
+            ],
             notes: [
                 LocalizedText(
                     english: "Note",

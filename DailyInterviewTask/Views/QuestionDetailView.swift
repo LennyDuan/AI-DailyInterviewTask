@@ -26,7 +26,7 @@ struct QuestionDetailView: View {
                 SectionCardView(eyebrow: "Constraints", title: localized("What to watch")) {
                     VStack(alignment: .leading, spacing: 10) {
                         ForEach(viewModel.question.constraints, id: \.self) { constraint in
-                            Label(constraint, systemImage: "circle.fill")
+                            Label(constraint.value(for: appSettings.selectedLanguage), systemImage: "circle.fill")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                                 .labelStyle(.titleAndIcon)

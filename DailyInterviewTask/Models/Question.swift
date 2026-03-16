@@ -41,7 +41,7 @@ struct Question: Identifiable, Codable, Equatable, Hashable {
     let exampleInput: String
     let exampleOutput: String
     let exampleExplanation: LocalizedText
-    let constraints: [String]
+    let constraints: [LocalizedText]
     let notes: [LocalizedText]
     let solutions: [QuestionSolution]
 
